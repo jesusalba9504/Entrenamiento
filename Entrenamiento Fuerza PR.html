@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Entrenamiento - Registro de PRs</title>
+
+<style>
+body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; }
+h1 { text-align: center; padding: 15px; margin: 0; background: #1a1a2e; color: white; }
+
+.container { height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; }
+
+.card {
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+  background: white;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.week1 h2 { background: #6baed6; }
+.week2 h2 { background: #3182bd; }
+.week3 h2 { background: #08519c; }
+.week4 h2 { background: #08306b; }
+
+h2 { color: white; padding: 10px; border-radius: 8px; text-align: center; margin: 0 0 10px 0; }
+.section-title { font-weight: bold; margin-top: 5px; color: #333; border-left: 4px solid #e74c3c; padding-left: 8px; }
+ul { padding-left: 18px; margin: 0; }
+li { margin-bottom: 2px; }
+
+/* ========== ESTILOS PARA PRs ========== */
+.pr-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f0f0f0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin: 8px 0;
+  font-size: 0.8em;
+}
+
+.pr-best {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #ffd700;
+  padding: 4px 10px;
+  border-radius: 15px;
+  color: #333;
+  font-weight: bold;
+}
+
+.pr-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8em;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 5px 0 15px 0;
+  transition: all 0.3s;
+  width: 100%;
+}
+
+.pr-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102,126,234,0.4);
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background-color: white;
+  margin: 50% auto 0;
+  padding: 20px;
+  width: 85%;
+  max-width: 350px;
+  border-radius: 16px;
+  animation: slideUp 0.3s;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 10px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.close {
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 20px;
+}
+
+.close:hover {
+  color: #000;
+}
+
+.modal-input-group {
+  margin-bottom: 15px;
+}
+
+.modal-input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.85em;
+  color: #666;
+}
+
+.modal-input-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.modal-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+/* Sección de historial */
+.historial-section {
+  background: white;
+  padding: 20px;
+  margin: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.historial-section h3 {
+  color: #333;
+  border-left: 4px solid #667eea;
+  padding-left: 10px;
+  margin-top: 0;
+}
+
+.historial-ejercicio {
+  margin-bottom: 25px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.historial-ejercicio h4 {
+  margin: 0 0 10px 0;
+  color: #667eea;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.historial-lista {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.historial-item {
+  padding: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.8em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.historial-item.best {
+  background: #fff3cd;
+  border-left: 3px solid #ffd700;
+  padding-left: 5px;
+}
+
+.badge-best {
+  background: #ffd700;
+  color: #333;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 0.7em;
+  font-weight: bold;
+}
+
+@media (min-width: 768px) {
+  .card { max-width: 600px; margin: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+  .modal-content { margin: 20% auto 0; }
+}
+</style>
+</head>
+<body>
+
+<h1>Plan de Entrenamiento</h1>
+<div class="container">
+
+<!-- ================= SEMANA 1 ================= -->
+<div class="card week1">
+<h2>Semana 1 · Deadlift Day (3x8)</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️ Peso Muerto</span>
+  <span class="pr-best" id="best_deadlift_show_s1">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('deadlift', 's1')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul>
+<li>Hip Airplane (2x10)</li>
+<li>Kettlebell Swing (2x12)</li>
+<li>Single Leg RDL (2x12)</li>
+</ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Long Jumps (3x3)</li>
+<li>Deadlift (3x8)</li>
+<li>Explosive Pend Lay Row (3x8)</li>
+<li>Step Down (2x12)</li>
+<li>Nordic Curl (2x10)</li>
+<li>Pull-ups Explosive-passive (3x2+6)</li>
+<li>Biceps curls Barbell (2x10)</li>
+<li>Standing Calves raises (2x10) - Superset A</li>
+<li>Tibialis Raises (2x10) - Superset A</li>
+<li>Farmer´s Carry</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Pallof Press (2x12 c/lado)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>25 min zona 2 (bicycle)</li></ul>
+</div>
+
+<div class="card week1">
+<h2>Semana 1 · Press Day (3x8)</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️‍♂️ Bench Press</span>
+  <span class="pr-best" id="best_bench_show_s1">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('bench', 's1')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul>
+<li>W-opened (30-45s hold)</li>
+<li>Single Arm KB Bench (2x10)</li>
+<li>Band triceps extension (10s hold x3)</li>
+<li>Lock3Routine</li>
+</ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Explosive Push-ups (3x5)</li>
+<li>Bench Press (3x8)</li>
+<li>Incline DB Bench Press (3x8)</li>
+<li>LU raises (2x10)</li>
+<li>Rear Deltoid on Fly Machine (2x10) - Superset A</li>
+<li>Fly Machine (2x10) - Superset A</li>
+<li>DB Triceps extension overhead (2x10)</li>
+<li>Dead Hang with shrugs (2x5 scapular pulls)</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Hanging Leg Raises (2x10)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>25 min zona 2 (treadmill push and pull)</li></ul>
+</div>
+
+<div class="card week1">
+<h2>Semana 1 · Accessory Day</h2>
+<div class="section-title">🔥 Warm Up</div>
+<ul>
+<li>Joint Mobilization</li>
+<li>W-opened (30-45s hold)</li>
+<li>Band triceps extension (10s hold x3)</li>
+<li>Lock3Routine</li>
+<li>Hip Airplane (2x10)</li>
+</ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Incline DB Bench Press (3x10)</li>
+<li>Pull-ups passive (3x6)</li>
+<li>Overhead Press (3x8)</li>
+<li>Biceps curls Barbell (2x10)</li>
+<li>LU raises (2x10)</li>
+<li>Rear Deltoid on Fly Machine (2x10) - Superset A</li>
+<li>DB Triceps extension overhead (2x10)</li>
+<li>Wrist Roller</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Back No Extension Holds</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>4x4 full gas (treadmill push and pull)</li></ul>
+</div>
+
+<div class="card week1">
+<h2>Semana 1 · Squat Day (3x8)</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️‍♀️ Sentadilla</span>
+  <span class="pr-best" id="best_squat_show_s1">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('squat', 's1')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>Joint Mobilization</li><li>Goblet Squat (2x10)</li><li>Single Leg assisted Squat (2x10)</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>High jumps (3x6)</li>
+<li>Front Squat (3x8)</li>
+<li>Walking Lunges (3x12)</li>
+<li>Glute Bridge (2x12)</li>
+<li>Sissy Squat (2x10)</li>
+<li>Flexed Calves push (2x10) - Superset A</li>
+<li>Tibialis Raises (2x10) - Superset A</li>
+<li>Plate Pinch</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>McGill Curl Up (2x8)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>20 min zona 2 (treadmill walk)</li></ul>
+</div>
+
+<!-- ================= SEMANA 2 ================= -->
+<div class="card week2">
+<h2>Semana 2 · Deadlift Day (3x5)</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️ Peso Muerto</span>
+  <span class="pr-best" id="best_deadlift_show_s2">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('deadlift', 's2')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>Hip Airplane (2x10)</li><li>Kettlebell Swing (2x12)</li><li>Single Leg RDL (2x12)</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Long Jumps (3x3)</li>
+<li>Deadlift (3x5)</li>
+<li>Explosive Pend Lay Row (3x8)</li>
+<li>Step Down (2x12)</li>
+<li>Nordic Curl (2x10)</li>
+<li>Pull-ups Explosive-passive (3x2+6)</li>
+<li>Biceps curls Barbell (2x10)</li>
+<li>Standing Calves raises (2x10) - Superset A</li>
+<li>Tibialis Raises (2x10) - Superset A</li>
+<li>Farmer´s Carry</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Pallof Press (2x12 c/lado)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>25 min zona 2 (bicycle)</li></ul>
+</div>
+
+<div class="card week2">
+<h2>Semana 2 · Press Day (3x5)</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️‍♂️ Bench Press</span>
+  <span class="pr-best" id="best_bench_show_s2">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('bench', 's2')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>W-opened (30-45s hold)</li><li>Single Arm KB Bench (2x10)</li><li>Band triceps extension (10s hold x3)</li><li>Lock3Routine</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Explosive Push-ups (3x5)</li>
+<li>Bench Press (3x5)</li>
+<li>Incline DB Bench Press (3x8)</li>
+<li>LU raises (2x10)</li>
+<li>Rear Deltoid on Fly Machine (2x10) - Superset A</li>
+<li>Fly Machine (2x10) - Superset A</li>
+<li>DB Triceps extension overhead (2x10)</li>
+<li>Dead Hang with shrugs (2x5 scapular pulls)</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Hanging Leg Raises (2x10)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>25 min zona 2 (treadmill push and pull)</li></ul>
+</div>
+
+<div class="card week2">
+<h2>Semana 2 · Accessory Day</h2>
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>Joint Mobilization</li><li>W-opened (30-45s hold)</li><li>Band triceps extension (10s hold x3)</li><li>Lock3Routine</li><li>Hip Airplane (2x10)</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Incline DB Bench Press (3x10)</li>
+<li>Pull-ups passive (3x6)</li>
+<li>Overhead Press (3x8)</li>
+<li>Biceps curls Barbell (2x10)</li>
+<li>LU raises (2x10)</li>
+<li>Rear Deltoid on Fly Machine (2x10) - Superset A</li>
+<li>DB Triceps extension overhead (2x10)</li>
+<li>Wrist Roller</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Back No Extension Holds</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>4x4 full gas (treadmill push and pull)</li></ul>
+</div>
+
+<div class="card week2">
+<h2>Semana 2 · Squat Day (3x5)</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️‍♀️ Sentadilla</span>
+  <span class="pr-best" id="best_squat_show_s2">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('squat', 's2')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>Joint Mobilization</li><li>Goblet Squat (2x10)</li><li>Single Leg assisted Squat (2x10)</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>High jumps (3x6)</li>
+<li>Front Squat (3x5)</li>
+<li>Walking Lunges (3x12)</li>
+<li>Glute Bridge (2x12)</li>
+<li>Sissy Squat (2x10)</li>
+<li>Flexed Calves push (2x10) - Superset A</li>
+<li>Tibialis Raises (2x10) - Superset A</li>
+<li>Plate Pinch</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>McGill Curl Up (2x8)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>20 min zona 2 (treadmill walk)</li></ul>
+</div>
+
+<!-- ================= SEMANA 3 ================= -->
+<div class="card week3">
+<h2>Semana 3 · Deadlift Day (4x3)</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️ Peso Muerto</span>
+  <span class="pr-best" id="best_deadlift_show_s3">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('deadlift', 's3')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>Hip Airplane (2x10)</li><li>Kettlebell Swing (2x12)</li><li>Single Leg RDL (2x12)</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Long Jumps (3x3)</li>
+<li>Deadlift (4x3)</li>
+<li>Explosive Pend Lay Row (3x8)</li>
+<li>Step Down (2x12)</li>
+<li>Nordic Curl (2x10)</li>
+<li>Pull-ups Explosive-passive (3x2+6)</li>
+<li>Biceps curls Barbell (2x10)</li>
+<li>Standing Calves raises (2x10) - Superset A</li>
+<li>Tibialis Raises (2x10) - Superset A</li>
+<li>Farmer´s Carry</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Pallof Press (2x12 c/lado)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>25 min zona 2 (bicycle)</li></ul>
+</div>
+
+<div class="card week3">
+<h2>Semana 3 · Press Day (4x3)</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️‍♂️ Bench Press</span>
+  <span class="pr-best" id="best_bench_show_s3">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('bench', 's3')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>W-opened (30-45s hold)</li><li>Single Arm KB Bench (2x10)</li><li>Band triceps extension (10s hold x3)</li><li>Lock3Routine</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Explosive Push-ups (3x5)</li>
+<li>Bench Press (4x3)</li>
+<li>Incline DB Bench Press (3x8)</li>
+<li>LU raises (2x10)</li>
+<li>Rear Deltoid on Fly Machine (2x10) - Superset A</li>
+<li>Fly Machine (2x10) - Superset A</li>
+<li>DB Triceps extension overhead (2x10)</li>
+<li>Dead Hang with shrugs (2x5 scapular pulls)</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Hanging Leg Raises (2x10)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>25 min zona 2 (treadmill push and pull)</li></ul>
+</div>
+
+<div class="card week3">
+<h2>Semana 3 · Accessory Day</h2>
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>Joint Mobilization</li><li>W-opened (30-45s hold)</li><li>Band triceps extension (10s hold x3)</li><li>Lock3Routine</li><li>Hip Airplane (2x10)</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Incline DB Bench Press (3x10)</li>
+<li>Pull-ups passive (3x6)</li>
+<li>Overhead Press (3x8)</li>
+<li>Biceps curls Barbell (2x10)</li>
+<li>LU raises (2x10)</li>
+<li>Rear Deltoid on Fly Machine (2x10) - Superset A</li>
+<li>DB Triceps extension overhead (2x10)</li>
+<li>Wrist Roller</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Back No Extension Holds</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>4x4 full gas (treadmill push and pull)</li></ul>
+</div>
+
+<div class="card week3">
+<h2>Semana 3 · Squat Day (4x3)</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️‍♀️ Sentadilla</span>
+  <span class="pr-best" id="best_squat_show_s3">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('squat', 's3')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>Joint Mobilization</li><li>Goblet Squat (2x10)</li><li>Single Leg assisted Squat (2x10)</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>High jumps (3x6)</li>
+<li>Front Squat (4x3)</li>
+<li>Walking Lunges (3x12)</li>
+<li>Glute Bridge (2x12)</li>
+<li>Sissy Squat (2x10)</li>
+<li>Flexed Calves push (2x10) - Superset A</li>
+<li>Tibialis Raises (2x10) - Superset A</li>
+<li>Plate Pinch</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>McGill Curl Up (2x8)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>20 min zona 2 (treadmill walk)</li></ul>
+</div>
+
+<!-- ================= SEMANA 4 ================= -->
+<div class="card week4">
+<h2>Semana 4 · Deadlift Day (5x1) RPE 9-9.5</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️ Peso Muerto</span>
+  <span class="pr-best" id="best_deadlift_show_s4">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('deadlift', 's4')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>Hip Airplane (2x10)</li><li>Kettlebell Swing (2x12)</li><li>Single Leg RDL (2x12)</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Deadlift (5x1) RPE 9-9.5</li>
+<li>Step Down (2x12)</li>
+<li>Nordic Curl (1x8-10)</li>
+<li>Pull-ups normales (1x6-8)</li>
+<li>Biceps curls Barbell (1x10)</li>
+<li>Standing Calves raises (1x10) - Superset A</li>
+<li>Tibialis Raises (1x10) - Superset A</li>
+<li>Farmer´s Carry</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Pallof Press (1x12 c/lado)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>10 min walking or mobility</li></ul>
+</div>
+
+<div class="card week4">
+<h2>Semana 4 · Press Day (5x1) RPE 9-9.5</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️‍♂️ Bench Press</span>
+  <span class="pr-best" id="best_bench_show_s4">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('bench', 's4')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>W-opened (30-45s hold)</li><li>Single Arm KB Bench (2x10)</li><li>Band triceps extension (10s hold x3)</li><li>Lock3Routine</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Bench Press (5x1) RPE 9-9.5</li>
+<li>Incline DB Bench Press (1x8)</li>
+<li>LU raises (1x10)</li>
+<li>Rear Deltoid on Fly Machine (1x10) - Superset A</li>
+<li>Fly Machine (1x10) - Superset A</li>
+<li>DB Triceps extension overhead (1x10)</li>
+<li>Dead Hang with shrugs (1x5 scapular pulls)</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Hanging Leg Raises (1x10)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>10 min walking or mobility</li></ul>
+</div>
+
+<div class="card week4">
+<h2>Semana 4 · Accessory Day</h2>
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>Joint Mobilization</li><li>W-opened (30-45s hold)</li><li>Band triceps extension (10s hold x3)</li><li>Lock3Routine</li><li>Hip Airplane (2x10)</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Incline DB Bench Press (3x10)</li>
+<li>Pull-ups passive (3x6)</li>
+<li>Overhead Press (3x8)</li>
+<li>Biceps curls Barbell (2x10)</li>
+<li>LU raises (2x10)</li>
+<li>Rear Deltoid on Fly Machine (2x10) - Superset A</li>
+<li>DB Triceps extension overhead (2x10)</li>
+<li>Wrist Roller</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>Back No Extension Holds</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>4x4 full gas (treadmill push and pull)</li></ul>
+</div>
+
+<div class="card week4">
+<h2>Semana 4 · Squat Day (5x1) RPE 9-9.5</h2>
+
+<!-- PR TRACKER -->
+<div class="pr-stats">
+  <span>🏋️‍♀️ Sentadilla</span>
+  <span class="pr-best" id="best_squat_show_s4">🏆 0 kg</span>
+</div>
+<button class="pr-button" onclick="abrirModal('squat', 's4')">
+  📝 Registrar nuevo PR
+</button>
+
+<div class="section-title">🔥 Warm Up</div>
+<ul><li>Joint Mobilization</li><li>Goblet Squat (2x10)</li><li>Single Leg assisted Squat (2x10)</li></ul>
+<div class="section-title">🏋️ Workout</div>
+<ul>
+<li>Front Squat (5x1) RPE 9-9.5</li>
+<li>Walking Lunges (1x12)</li>
+<li>Glute Bridge (2x12)</li>
+<li>Sissy Squat (1x10)</li>
+<li>Flexed Calves push (1x10) - Superset A</li>
+<li>Tibialis Raises (1x10) - Superset A</li>
+<li>Plate Pinch</li>
+</ul>
+<div class="section-title">🍫 Core</div>
+<ul><li>McGill Curl Up (1x8)</li></ul>
+<div class="section-title">❤️ Cardio</div>
+<ul><li>10 min walking or mobility</li></ul>
+</div>
+
+</div>
+
+<!-- MODAL PARA REGISTRAR PR -->
+<div id="prModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-title">Registrar PR</h3>
+      <span class="close" onclick="cerrarModal()">&times;</span>
+    </div>
+    <div class="modal-input-group">
+      <label>Peso máximo usado (kg)</label>
+      <input type="number" id="modal-peso" step="0.5" placeholder="Ej: 120">
+    </div>
+    <div class="modal-input-group">
+      <label>Repeticiones + RIR</label>
+      <input type="number" id="modal-reps" step="0.5" placeholder="Ej: 5 = 3 reps + 2 RIR">
+    </div>
+    <div class="modal-input-group">
+      <label>1RM Estimado</label>
+      <input type="text" id="modal-pr" readonly style="background:#f5f5f5; font-weight:bold;">
+    </div>
+    <button class="modal-button" onclick="guardarPRModal()">✅ Guardar PR</button>
+  </div>
+</div>
+
+<!-- SECCIÓN DE HISTORIAL COMPLETO -->
+<div class="historial-section" id="historial-section">
+  <h3>📜 HISTORIAL COMPLETO DE PRs</h3>
+  <div id="historial-container"></div>
+</div>
+
+<script>
+// ========== SISTEMA DE REGISTRO DE PRs ==========
+
+// Función para calcular el 1RM
+function calcularPR(peso, repsRIR) {
+  if (!peso || !repsRIR || peso <= 0 || repsRIR <= 0) return 0;
+  let L = parseFloat(repsRIR);
+  let I = parseFloat(peso);
+  if (L <= 3) return I * Math.pow(L, 0.1);
+  else if (L <= 8) return I / (1.0278 - 0.0278 * L);
+  else return I * (1 + L / 30);
+}
+
+// Variables globales para el modal
+let modalEjercicio = '';
+let modalSemana = '';
+
+// Abrir modal
+function abrirModal(ejercicio, semana) {
+  modalEjercicio = ejercicio;
+  modalSemana = semana;
+  
+  const nombres = { deadlift: 'Peso Muerto', bench: 'Bench Press', squat: 'Sentadilla' };
+  document.getElementById('modal-title').innerHTML = `📝 ${nombres[ejercicio]} - ${semana.toUpperCase()}`;
+  
+  document.getElementById('modal-peso').value = '';
+  document.getElementById('modal-reps').value = '';
+  document.getElementById('modal-pr').value = '';
+  
+  // Event listeners en tiempo real
+  const pesoInput = document.getElementById('modal-peso');
+  const repsInput = document.getElementById('modal-reps');
+  const prOutput = document.getElementById('modal-pr');
+  
+  const updatePR = () => {
+    const pr = calcularPR(pesoInput.value, repsInput.value);
+    prOutput.value = pr > 0 ? pr.toFixed(1) + ' kg' : '---';
+  };
+  
+  pesoInput.oninput = updatePR;
+  repsInput.oninput = updatePR;
+  
+  document.getElementById('prModal').style.display = 'block';
+}
+
+// Cerrar modal
+function cerrarModal() {
+  document.getElementById('prModal').style.display = 'none';
+}
+
+// Obtener mejor PR de un historial
+function obtenerMejorPR(historial) {
+  if (!historial || historial.length === 0) return 0;
+  return Math.max(...historial.map(item => parseFloat(item.pr)));
+}
+
+// Actualizar el display del mejor PR en la tarjeta
+function actualizarMejorPR(ejercicio, semana) {
+  const historyKey = `${ejercicio}_${semana}_history`;
+  const historial = JSON.parse(localStorage.getItem(historyKey) || '[]');
+  const mejorPR = obtenerMejorPR(historial);
+  
+  const element = document.getElementById(`best_${ejercicio}_show_${semana}`);
+  if (element) {
+    element.innerHTML = mejorPR > 0 ? `🏆 ${mejorPR.toFixed(1)} kg` : '🏆 0 kg';
+  }
+}
+
+// Guardar PR desde modal
+function guardarPRModal() {
+  const peso = document.getElementById('modal-peso').value;
+  const reps = document.getElementById('modal-reps').value;
+  const prValue = document.getElementById('modal-pr').value;
+  const prNumero = parseFloat(prValue);
+  
+  if (!peso || !reps || isNaN(prNumero) || prNumero === 0) {
+    alert('⚠️ Por favor, completa todos los campos');
+    return;
+  }
+  
+  // Guardar en localStorage
+  const historyKey = `${modalEjercicio}_${modalSemana}_history`;
+  let historial = JSON.parse(localStorage.getItem(historyKey) || '[]');
+  
+  const nuevoRegistro = {
+    fecha: new Date().toLocaleDateString(),
+    hora: new Date().toLocaleTimeString(),
+    peso: peso,
+    reps: reps,
+    pr: prNumero.toFixed(1)
+  };
+  
+  historial.push(nuevoRegistro);
+  localStorage.setItem(historyKey, JSON.stringify(historial));
+  
+  // Actualizar UI
+  actualizarMejorPR(modalEjercicio, modalSemana);
+  actualizarHistorialCompleto();
+  
+  // Verificar si es nuevo récord
+  const mejorAnterior = obtenerMejorPR(historial.slice(0, -1));
+  if (prNumero > mejorAnterior) {
+    alert(`🎉 ¡NUEVO RÉCORD PERSONAL! 🎉\n${prNumero.toFixed(1)} kg\n¡Felicidades! 🏆`);
+  } else {
+    alert(`✅ PR guardado: ${prNumero.toFixed(1)} kg`);
+  }
+  
+  cerrarModal();
+}
+
+// Actualizar la sección completa de historial
+function actualizarHistorialCompleto() {
+  const ejercicios = ['deadlift', 'bench', 'squat'];
+  const semanas = ['s1', 's2', 's3', 's4'];
+  const nombres = { deadlift: '🏋️ Peso Muerto', bench: '🏋️‍♂️ Bench Press', squat: '🏋️‍♀️ Sentadilla' };
+  
+  let html = '';
+  
+  for (let semana of semanas) {
+    html += `<div style="margin-bottom: 30px;"><h3 style="color:#667eea;">📅 ${semana.toUpperCase()}</h3>`;
+    for (let ej of ejercicios) {
+      const historyKey = `${ej}_${semana}_history`;
+      const historial = JSON.parse(localStorage.getItem(historyKey) || '[]');
+      const mejorPR = obtenerMejorPR(historial);
+      
+      html += `<div class="historial-ejercicio">
+        <h4>${nombres[ej]} <span class="badge-best">Mejor: ${mejorPR > 0 ? mejorPR.toFixed(1) + ' kg' : 'Sin registro'}</span></h4>
+        <div class="historial-lista">`;
+      
+      if (historial.length === 0) {
+        html += `<div class="historial-item">Sin registros aún</div>`;
+      } else {
+        historial.slice().reverse().forEach(item => {
+          const esMejor = parseFloat(item.pr) === mejorPR && mejorPR > 0;
+          html += `<div class="historial-item ${esMejor ? 'best' : ''}">
+            <span>📅 ${item.fecha}</span>
+            <span><strong>${item.pr} kg</strong> (${item.peso}kg x ${item.reps})</span>
+            ${esMejor ? '<span class="badge-best">🏆 RÉCORD</span>' : ''}
+          </div>`;
+        });
+      }
+      
+      html += `</div></div>`;
+    }
+    html += `</div>`;
+  }
+  
+  const historialContainer = document.getElementById('historial-container');
+  if (historialContainer) {
+    historialContainer.innerHTML = html;
+  }
+}
+
+// Cargar todos los datos al iniciar
+function cargarTodosLosPRs() {
+  const ejercicios = ['deadlift', 'bench', 'squat'];
+  const semanas = ['s1', 's2', 's3', 's4'];
+  
+  for (let semana of semanas) {
+    for (let ej of ejercicios) {
+      actualizarMejorPR(ej, semana);
+    }
+  }
+  
+  actualizarHistorialCompleto();
+}
+
+// Cerrar modal haciendo clic fuera
+window.onclick = function(event) {
+  const modal = document.getElementById('prModal');
+  if (event.target === modal) {
+    cerrarModal();
+  }
+}
+
+// Inicializar cuando la página cargue
+document.addEventListener('DOMContentLoaded', cargarTodosLosPRs);
+</script>
+
+</body>
+</html>
